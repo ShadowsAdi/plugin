@@ -217,7 +217,7 @@ public cmdResetData(id, level, cid)
     get_players(iPlayers, iNum)
     for(new iPlayer, i;i < iNum;i++)
     {
-        iPlayer = iPlayers
+        iPlayer = iPlayers[i]
         
         g_dPlayerData[iPlayer][iBetTimes] = 0
         g_dPlayerData[iPlayer][iMostLoseValue] = 0
@@ -431,7 +431,7 @@ public jackpot_handler(id, iMenu, iItem)
                 return PLUGIN_HANDLED
             }
 
-            csgo_set_money(id, csgo_add_money(id) + g_dPlayerData[id][iJackpotMoneyBetted])
+            csgo_add_money(id, Float:g_dPlayerData[id][iJackpotMoneyBetted])
 
             g_dPlayerData[id][iBetTimes]--
             g_dPlayerData[id][iJackpotsBets]--
@@ -457,7 +457,7 @@ public showPlayersChanceMenu(id)
     get_players(iPlayers, iNum)
     for(new i, iChance, szAuthid[35], szName[MAX_PLAYERS];i < iNum; i++)
     {
-        tempid = iPlayers
+        tempid = iPlayers[i]
     
         if(g_dPlayerData[tempid][bIsJackpotGambler])
         {
@@ -480,36 +480,33 @@ public chance_handler(id, iMenu)
 
 public cmdBetValue(id)
 {
-    new szValue[6]
+    new szValue[6], iValue
     read_argv(1, szValue, charsmax(szValue))
-    new iValue = str_to_num(szValue), iUserMoney = csgo_add_money(id)
-    
-    new iCvarMinBet = get_pcvar_num(pCvars[pCvarMinBet])
-    new iCvarMaxBet = get_pcvar_num(pCvars[pCvarMaxBet])
-    
+    iValue = str_to_num(szValue)
+        
     if(iValue <= 0)
     {
         ChatColor(id, "You must use a value that's more than 0")
         return PLUGIN_HANDLED
     }
-    else if(iValue > iUserMoney)
+    else if(iValue > csgo_get_money(id))
     {
         ChatColor(id, "You do not have enough money!")
         return PLUGIN_HANDLED
     }
-    else if(iValue < iCvarMinBet)
+    else if(iValue < get_pcvar_num(pCvars[pCvarMinBet]))
     {
-        ChatColor(id, "You must use a value that's more than^x04 %d", iCvarMinBet)
+        ChatColor(id, "You must use a value that's more than^x04 %d", get_pcvar_num(pCvars[pCvarMinBet]))
         return PLUGIN_HANDLED
     }
-    else if(iValue > iCvarMaxBet)
+    else if(iValue > get_pcvar_num(pCvars[pCvarMaxBet]))
     {
-        ChatColor(id, "You must use a value that's less than^x04 %d", iCvarMaxBet)
+        ChatColor(id, "You must use a value that's less than^x04 %d", get_pcvar_num(pCvars[pCvarMaxBet]))
         return PLUGIN_HANDLED
     }
     else
     {
-        csgo_set_money(id, (iUserMoney - iValue))
+        csgo_set_money(id, (csgo_get_money(id) - iValue))
         
         g_iCount++
         g_iValueBetted += iValue
@@ -656,7 +653,7 @@ public roll()
     get_players(iPlayers, iNum)
     for(new i;i < iNum; i++)
     {
-        id = iPlayers
+        id = iPlayers[i]
         
         if(id != iRandomPlayer && g_dPlayerData[id][bIsJackpotGambler])
         {
@@ -685,7 +682,7 @@ public clcmd_coinbet(id)
         ChatColor(id, "You must use a value that's more than 0")
         return PLUGIN_HANDLED
     }
-    else if(iAmount > csgo_add_money(id)) 
+    else if(iAmount > csgo_get_money(id)) 
     {
         ChatColor(id, "You do not have enough money!")
         return PLUGIN_HANDLED
@@ -732,7 +729,7 @@ public clclmd_coin_menu(id)
     
     for(new i, szName[MAX_PLAYERS], player, szInfo[3]; i < iNum; i++)
     {
-        player = iPlayers
+        player = iPlayers[i]
         
         if(player == id || g_dPlayerData[player][bIsBetting]) 
         {
@@ -1285,7 +1282,7 @@ setUserMoney(id, iWonValue, szGameName[])
     }
     ChatColor(0, szMsg)
             
-    csgo_set_money(id, clamp((csgo_add_money(id) + iWonValue), 0, MAX_MONEY), 1)
+    csgo_set_money(id, csgo_get_money(id) + iWonValue)
     
     if(szGameName[0] == 'R')
     {
@@ -1401,7 +1398,7 @@ bool:canBet(id, iMoneyBet, bool:bIsCrash = false, bool:bMessage = false, iCvarCh
         ChatColor(id, "You must bet a value that's more than 0!")
         return false
     }
-    else if(csgo_add_money(id) < iMoneyBet)
+    else if(csgo_get_money(id) < iMoneyBet)
     {
         ChatColor(id, "You can not bet more than you have!")
         return false
@@ -1442,7 +1439,7 @@ setData(id, iMoneyBet, bool:bHud)
         ShowSyncHudMsg(id, g_hSync[Roulling], "ROLLING...")
     }
     
-    csgo_set_money(id, (csgo_add_money(id) - iMoneyBet), 1)
+    csgo_set_money(id, (csgo_get_money(id) - iMoneyBet))
 }
 
 resetData(setTheChange)
@@ -1458,13 +1455,13 @@ resetData(setTheChange)
     get_players(iPlayers, iNum)
     for(new i;i < iNum; i++)
     {
-        id = iPlayers
+        id = iPlayers[i]
         
         if(setTheChange)
         {
             if(g_dPlayerData[id][bIsJackpotGambler])
             {
-                csgo_set_money(id, csgo_add_money(id) + g_dPlayerData[id][iJackpotMoneyBetted])
+                csgo_set_money(id, csgo_get_money(id) + g_dPlayerData[id][iJackpotMoneyBetted])
             }
         }
 
@@ -1481,7 +1478,7 @@ checkPlayersInJackpot()
     get_players(iPlayers, iNum)
     for(new i;i < iNum; i++)
     {
-        if(g_dPlayerData[iPlayers][bIsJackpotGambler])
+        if(g_dPlayerData[iPlayers[i]][bIsJackpotGambler])
         {
             iPlayersNum++
         }
@@ -1642,8 +1639,7 @@ CheckIfIsTimeToWheel(id)
         }
     }
     
-    new iUserMoney = csgo_add_money(id)
-    if(iUserMoney >= MAX_MONEY)
+    if(csgo_get_money(id) >= MAX_MONEY)
     {
         ChatColor(id, "You can not use the daily wheel while you're with the max money:^x04 %d^x01", MAX_MONEY)
         return
@@ -1681,7 +1677,7 @@ CheckIfIsTimeToWheel(id)
     ChatColor((bIsBestReward) ? 0 : id, "%s^x01 got^x04 %s^x01 on daily wheel!", (bIsBestReward) ? szName : "You", szReward)
     replace(szReward, charsmax(szReward), "$", "")
     
-    csgo_set_money(id, clamp((iUserMoney + str_to_num(szReward)), 0, MAX_MONEY), 1)
+    csgo_set_money(id, csgo_get_money(id) + str_to_num(szReward))
 }
 
 is_user_connected_byauthid(const sAuthid[])
@@ -1691,7 +1687,7 @@ is_user_connected_byauthid(const sAuthid[])
     
     for(new i, szAuthid[MAX_PLAYERS], iPlayer; i < iNum; i++)
     {
-        iPlayer = iPlayers
+        iPlayer = iPlayers[i]
         
         if(g_dPlayerData[iPlayer][bIsJackpotGambler])
         {
@@ -1788,7 +1784,7 @@ get_challengers_num()
     get_players(iPlayers, iNum)
     for(new i; i < iNum; i++)
     {
-        if(g_dPlayerData[iPlayers][iCoinSide])
+        if(g_dPlayerData[iPlayers[i]][iCoinSide])
         {
             iCount++
         }
@@ -1868,7 +1864,7 @@ ChatColor(id, szMessage[], any:...)
         
     for(new i; i < iCount; i++)
     {
-        Player = iPlayers
+        Player = iPlayers[i]
 
         message_begin(MSG_ONE_UNRELIABLE, gMsgSayText, .player = Player)  
         write_byte(Player)
